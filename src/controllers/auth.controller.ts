@@ -112,6 +112,10 @@ export const loginUser = async (req: Request, res: Response) => {
             lastName: user.lastName,
             isVerified: user.isVerified,
             isAdmin: user.isAdmin,
+            bio: user.bio,
+            profilePhotoUrl: user.profilePhotoUrl,
+            storeName: user.storeName,
+            storeBannerUrl: user.storeBannerUrl,
             token,
         });
     } catch (error) {
