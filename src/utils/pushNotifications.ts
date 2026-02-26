@@ -1,8 +1,18 @@
-import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { PrismaClient } from '@prisma/client';
 
-const expo = new Expo();
 const prisma = new PrismaClient();
+
+// Lazy instance of Expo to handle ESM/CommonJS issues on Vercel
+let expoInstance: any = null;
+
+const getExpoInstance = async () => {
+    if (!expoInstance) {
+        // Dynamic import because expo-server-sdk v6+ is an ESM package
+        const { Expo } = await import('expo-server-sdk');
+        expoInstance = new Expo();
+    }
+    return expoInstance;
+};
 
 interface PushPayload {
     userIds: number[];
@@ -18,6 +28,10 @@ export const sendPushNotification = async (payload: PushPayload) => {
     try {
         const { userIds, title, body, data, type = 'SYSTEM', saveToDb = true } = payload;
 
+        // Dynamically get Expo and types safely
+        const { Expo } = await import('expo-server-sdk');
+        const expo = await getExpoInstance();
+
         // Fetch users to get their Expo push tokens
         const users = await prisma.user.findMany({
             where: {
@@ -26,7 +40,7 @@ export const sendPushNotification = async (payload: PushPayload) => {
             select: { id: true, expoPushToken: true }
         });
 
-        const messages: ExpoPushMessage[] = [];
+        const messages: any[] = []; // Using any[] to avoid strict type issues with dynamic imports
         const dbNotifications: any[] = [];
 
         for (const user of users) {
