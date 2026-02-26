@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 export const registerUser = async (req: Request, res: Response) => {
     try {
-        const { email, password, firstName, lastName, matricNumber } = req.body;
+        const { email, password, firstName, lastName, matricNumber, schoolId } = req.body;
 
         // Validate request
         if (!email || !password) {
@@ -48,8 +48,10 @@ export const registerUser = async (req: Request, res: Response) => {
                 firstName,
                 lastName,
                 matricNumber,
+                schoolId: schoolId ? parseInt(schoolId.toString()) : undefined,
                 level: verificationCode, // MVP: store code temporarily in level field
             },
+            include: { school: true }
         });
 
         // Generate token
@@ -69,6 +71,8 @@ export const registerUser = async (req: Request, res: Response) => {
             lastName: user.lastName,
             isVerified: user.isVerified,
             isAdmin: user.isAdmin,
+            schoolId: user.schoolId,
+            school: user.school,
             token,
         });
     } catch (error) {
@@ -89,6 +93,7 @@ export const loginUser = async (req: Request, res: Response) => {
         // Find user
         const user = await prisma.user.findUnique({
             where: { email },
+            include: { school: true }
         });
 
         if (!user) {
@@ -116,6 +121,8 @@ export const loginUser = async (req: Request, res: Response) => {
             profilePhotoUrl: user.profilePhotoUrl,
             storeName: user.storeName,
             storeBannerUrl: user.storeBannerUrl,
+            schoolId: user.schoolId,
+            school: user.school,
             token,
         });
     } catch (error) {
