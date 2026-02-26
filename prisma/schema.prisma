@@ -1,0 +1,355 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model School {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  type       String?
+  state      String?
+  city       String?
+  address    String?
+  logoUrl    String?
+  isApproved Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  users      User[]
+
+  @@map("schools")
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  hashedPassword  String
+  firstName       String?
+  lastName        String?
+  matricNumber    String?   @unique
+  level           String?
+  department      String?
+  bio             String    @default("")
+  profilePhotoUrl String?
+  isActive        Boolean   @default(true)
+  expoPushToken   String?
+  isVerified      Boolean   @default(false)
+  isAdmin         Boolean   @default(false)
+  idCardUrl       String?
+  isIdVerified    Boolean   @default(false)
+  storeName       String?
+  storeBannerUrl  String?
+  createdAt       DateTime  @default(now())
+  schoolId        Int?
+  school          School?   @relation(fields: [schoolId], references: [id])
+  products        Product[]
+
+  followers Follow[] @relation("following")
+  following Follow[] @relation("follower")
+
+  buyerConversations  Conversation[] @relation("BuyerConversations")
+  sellerConversations Conversation[] @relation("SellerConversations")
+  messages            Message[]
+
+  services        Service[]
+  requests        Request[]
+  reviewsGiven    Review[]  @relation("ReviewsGiven")
+  reviewsReceived Review[]  @relation("ReviewsReceived")
+
+  reportsSubmitted Report[] @relation("ReportsSubmitted")
+  reportsReceived  Report[] @relation("ReportsReceived")
+
+  savedSearches SavedSearch[]
+  notifications Notification[]
+  forumPosts    ForumPost[]        @relation("ForumPosts")
+  forumComments     ForumComment[]       @relation("ForumComments")
+  createdGroups     StudyGroup[]         @relation("CreatedStudyGroups")
+  joinedGroups      StudyGroupMember[]   @relation("JoinedStudyGroups")
+  sentGroupMessages StudyGroupMessage[]  @relation("SentStudyGroupMessages")
+
+  @@map("users")
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String
+  price         Float
+  condition     String // e.g. New, Like New, Used
+  listingType   String    @default("Sale") // e.g. Sale, Rent, Swap
+  imageUrl      String?
+  imageUrl2     String?
+  isSold        Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  isPromoted    Boolean   @default(false)
+  promotedUntil DateTime?
+
+  views     Int @default(0)
+  bookmarks Int @default(0)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  conversations Conversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([userId])
+  @@index([isActive])
+  @@map("products")
+}
+
+model Conversation {
+  id Int @id @default(autoincrement())
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  buyerId Int
+  buyer   User @relation("BuyerConversations", fields: [buyerId], references: [id])
+
+  sellerId Int
+  seller   User @relation("SellerConversations", fields: [sellerId], references: [id])
+
+  lastMessage String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  messages Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  senderId Int
+  sender   User @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+model Service {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String
+  price       Float // Base or hourly price
+  imageUrl    String?
+  isActive    Boolean @default(true)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([userId])
+  @@map("services")
+}
+
+model Request {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String
+  budget      Float // Proposed budget
+  isActive    Boolean @default(true)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([userId])
+  @@map("requests")
+}
+
+model Review {
+  id      Int     @id @default(autoincrement())
+  rating  Int // 1 to 5
+  comment String?
+
+  reviewerId Int
+  reviewer   User @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+
+  revieweeId Int
+  reviewee   User @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("reviews")
+}
+
+model Report {
+  id     Int    @id @default(autoincrement())
+  reason String
+  status String @default("PENDING") // PENDING, RESOLVED, DISMISSED
+
+  reporterId Int
+  reporter   User @relation("ReportsSubmitted", fields: [reporterId], references: [id])
+
+  reportedUserId Int
+  reportedUser   User @relation("ReportsReceived", fields: [reportedUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reports")
+}
+
+model Follow {
+  followerId  Int
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  followingId Int
+  following   User     @relation("following", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model BoostPlan {
+  id           Int      @id @default(autoincrement())
+  name         String
+  price        Float
+  durationDays Int
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("boost_plans")
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  reference String   @unique
+  amount    Float
+  status    String // e.g. "successful", "failed", "pending"
+  type      String // e.g. "boost", "escrow"
+  userId    Int
+  productId Int? // For "boost" type
+  createdAt DateTime @default(now())
+
+  @@map("transactions")
+}
+
+model SavedSearch {
+  id        Int      @id @default(autoincrement())
+  query     String
+  category  String?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("saved_searches")
+}
+
+model ForumPost {
+  id        Int            @id @default(autoincrement())
+  title     String
+  content   String
+  category  String // e.g. "Lost & Found", "General Discussion"
+  userId    Int
+  user      User           @relation("ForumPosts", fields: [userId], references: [id])
+  comments  ForumComment[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@map("forum_posts")
+}
+
+model ForumComment {
+  id        Int       @id @default(autoincrement())
+  content   String
+  postId    Int
+  post      ForumPost @relation(fields: [postId], references: [id])
+  userId    Int
+  user      User      @relation("ForumComments", fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+
+  @@map("forum_comments")
+}
+
+model StudyGroup {
+  id          Int                @id @default(autoincrement())
+  name        String
+  description String
+  courseCode  String?
+  creatorId   Int
+  creator     User               @relation("CreatedStudyGroups", fields: [creatorId], references: [id])
+  members     StudyGroupMember[]
+  messages    StudyGroupMessage[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@map("study_groups")
+}
+
+model StudyGroupMember {
+  id       Int        @id @default(autoincrement())
+  groupId  Int
+  group    StudyGroup @relation(fields: [groupId], references: [id])
+  userId   Int
+  user     User       @relation("JoinedStudyGroups", fields: [userId], references: [id])
+  joinedAt DateTime   @default(now())
+
+  @@unique([groupId, userId])
+  @@map("study_group_members")
+}
+
+model StudyGroupMessage {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+
+  groupId   Int
+  group     StudyGroup @relation(fields: [groupId], references: [id])
+
+  senderId  Int
+  sender    User @relation("SentStudyGroupMessages", fields: [senderId], references: [id])
+
+  @@map("study_group_messages")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // e.g., 'MESSAGE', 'SYSTEM', 'ORDER'
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  data      String?  // Optional JSON string for extra routing data
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+

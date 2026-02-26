@@ -1,0 +1,7 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "neondb", schema "public" at "ep-flat-leaf-a87kd8o7.eastus2.azure.neon.tech"
+
+Error: P1001: Can't reach database server at `ep-flat-leaf-a87kd8o7.eastus2.azure.neon.tech:5432`
+
+Please make sure your database server is running at `ep-flat-leaf-a87kd8o7.eastus2.azure.neon.tech:5432`.
