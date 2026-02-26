@@ -13,6 +13,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Basic landing route
+app.get('/', (req: Request, res: Response) => {
+    res.status(200).send('<h1>CampusTradeNG API</h1><p>The backend is live and running.</p>');
+});
+
 // Default health check endpoint
 app.get('/health', (req: Request, res: Response) => {
     res.status(200).json({ status: 'healthy', timestamp: new Date() });
