@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { generateToken } from '../utils/jwt';
-import { sendPasswordResetEmail, sendWelcomeEmail } from '../utils/emailService';
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationEmail } from '../utils/emailService';
 import { isDisposableEmail, isValidEmailFormat } from '../utils/disposableEmails';
 
 const prisma = new PrismaClient();
@@ -55,6 +55,13 @@ export const registerUser = async (req: Request, res: Response) => {
         // Generate token
         const token = generateToken({ id: user.id, email: user.email });
 
+        // Send verification email before responding so serverless functions don't freeze
+        try {
+            await sendVerificationEmail(user.email, verificationCode);
+        } catch (err) {
+            console.warn('Verification email failed (non-blocking):', err);
+        }
+
         res.status(201).json({
             id: user.id,
             email: user.email,
@@ -63,13 +70,6 @@ export const registerUser = async (req: Request, res: Response) => {
             isVerified: user.isVerified,
             isAdmin: user.isAdmin,
             token,
-        });
-
-        // Fire-and-forget: send verification email
-        import('../utils/emailService').then(({ sendVerificationEmail }) => {
-            sendVerificationEmail(user.email, verificationCode).catch(err =>
-                console.warn('Verification email failed (non-blocking):', err)
-            );
         });
     } catch (error) {
         console.error(error);
@@ -259,12 +259,12 @@ export const verifyEmail = async (req: Request, res: Response) => {
             }
         });
 
-        // Fire-and-forget: send welcome email now that they are verified
-        import('../utils/emailService').then(({ sendWelcomeEmail }) => {
-            sendWelcomeEmail(user.email, user.firstName || 'Student').catch(err =>
-                console.warn('Welcome email failed (non-blocking):', err)
-            );
-        });
+        // Send welcome email before responding (serverless compatibility)
+        try {
+            await sendWelcomeEmail(user.email, user.firstName || 'Student');
+        } catch (err) {
+            console.warn('Welcome email failed (non-blocking):', err);
+        }
 
         res.status(200).json(user);
     } catch (error) {
@@ -297,12 +297,12 @@ export const resendVerification = async (req: Request, res: Response) => {
             data: { level: verificationCode } // MVP: store code temporarily in level field
         });
 
-        // Fire-and-forget: send verification email
-        import('../utils/emailService').then(({ sendVerificationEmail }) => {
-            sendVerificationEmail(user.email, verificationCode).catch(err =>
-                console.warn('Resend verification email failed (non-blocking):', err)
-            );
-        });
+        // Send verification email before responding (serverless compatibility)
+        try {
+            await sendVerificationEmail(user.email, verificationCode);
+        } catch (err) {
+            console.warn('Resend verification email failed (non-blocking):', err);
+        }
 
         res.status(200).json({ message: 'Verification code resent successfully' });
     } catch (error) {
