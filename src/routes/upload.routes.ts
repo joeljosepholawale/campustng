@@ -19,9 +19,22 @@ try {
 
 // Multer config - store file in memory to send directly to Cloudinary
 const storage = multer.memoryStorage();
+
+const fileFilter = (req: express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    // Strictly allow only common image formats
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+
+    if (allowedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Invalid file type. Only JPEG, PNG, and WebP formats are allowed.'));
+    }
+};
+
 const upload = multer({
     storage,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter
 });
 
 router.post('/', protect, upload.single('image'), async (req: express.Request, res: express.Response): Promise<any> => {

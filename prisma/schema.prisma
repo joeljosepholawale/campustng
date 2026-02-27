@@ -36,13 +36,16 @@ model User {
   profilePhotoUrl String?
   isActive        Boolean   @default(true)
   expoPushToken   String?
-  isVerified      Boolean   @default(false)
-  isAdmin         Boolean   @default(false)
-  idCardUrl       String?
-  isIdVerified    Boolean   @default(false)
-  storeName       String?
-  storeBannerUrl  String?
-  createdAt       DateTime  @default(now())
+  isVerified       Boolean   @default(false)
+  verificationCode String?
+  isAdmin          Boolean   @default(false)
+  idCardUrl        String?
+  isIdVerified     Boolean   @default(false)
+  storeName        String?
+  storeBannerUrl   String?
+  resetCode        String?
+  resetCodeExpires DateTime?
+  createdAt        DateTime  @default(now())
   schoolId        Int?
   school          School?   @relation(fields: [schoolId], references: [id])
   products        Product[]

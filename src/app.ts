@@ -4,14 +4,29 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
 import messageRoutes from './routes/message.routes';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
 const app: Application = express();
 
+// Security HTTP headers
+app.use(helmet());
+
+// Rate limiting: 100 requests per 15 minutes globally
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many requests from this IP, please try again after 15 minutes' }
+});
+app.use('/api', globalLimiter);
+
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10kb' })); // Mitigate parsing heavy JSON
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Basic landing route
 app.get('/', (req: Request, res: Response) => {

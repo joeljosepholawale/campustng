@@ -49,7 +49,7 @@ export const registerUser = async (req: Request, res: Response) => {
                 lastName,
                 matricNumber,
                 schoolId: schoolId ? parseInt(schoolId.toString()) : undefined,
-                level: verificationCode, // MVP: store code temporarily in level field
+                verificationCode,
             },
             include: { school: true }
         });
@@ -243,7 +243,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        if (userCheck.level !== code) {
+        if (userCheck.verificationCode !== code) {
             return res.status(400).json({ message: 'Incorrect verification code' });
         }
 
@@ -252,7 +252,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
             where: { id: userId },
             data: {
                 isVerified: true,
-                level: null // Clear the OTP
+                verificationCode: null // Clear the OTP
             },
             select: {
                 id: true,
@@ -305,7 +305,7 @@ export const resendVerification = async (req: Request, res: Response) => {
 
         await prisma.user.update({
             where: { id: userId },
-            data: { level: verificationCode } // MVP: store code temporarily in level field
+            data: { verificationCode }
         });
 
         // Send verification email before responding (serverless compatibility)
@@ -466,10 +466,16 @@ export const forgotPassword = async (req: Request, res: Response) => {
         // Generate 6-digit code
         const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // Store the code temporarily (MVP: using level field; production would use a dedicated table)
+        // Code expires in 15 minutes
+        const resetCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+        // Store the specific reset fields
         await prisma.user.update({
             where: { email },
-            data: { level: `RESET:${resetCode}` },
+            data: {
+                resetCode,
+                resetCodeExpires
+            },
         });
 
         // Send the code via email (Brevo or Resend)
@@ -500,8 +506,13 @@ export const resetPassword = async (req: Request, res: Response) => {
         }
 
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user || user.level !== `RESET:${code}`) {
-            return res.status(400).json({ message: 'Invalid or expired reset code' });
+
+        if (!user || user.resetCode !== code) {
+            return res.status(400).json({ message: 'Invalid reset code' });
+        }
+
+        if (user.resetCodeExpires && new Date() > user.resetCodeExpires) {
+            return res.status(400).json({ message: 'Reset code has expired. Please request a new one.' });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -511,7 +522,8 @@ export const resetPassword = async (req: Request, res: Response) => {
             where: { email },
             data: {
                 hashedPassword,
-                level: null, // Clear the reset code
+                resetCode: null,
+                resetCodeExpires: null,
             },
         });
 
