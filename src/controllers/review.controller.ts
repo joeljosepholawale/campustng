@@ -10,7 +10,8 @@ export const reviewController = {
             const reviewerId = (req as any).user.id;
             const { revieweeId, rating, comment } = req.body;
 
-            if (!revieweeId || !rating || rating < 1 || rating > 5) {
+            const parsedRating = Number(rating);
+            if (revieweeId == null || rating == null || isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
                 return res.status(400).json({ message: 'Valid revieweeId and rating (1-5) are required' });
             }
 
@@ -20,7 +21,7 @@ export const reviewController = {
 
             const review = await prisma.review.create({
                 data: {
-                    rating: parseInt(rating),
+                    rating: parsedRating,
                     comment,
                     reviewerId,
                     revieweeId: parseInt(revieweeId)
