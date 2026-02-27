@@ -173,5 +173,36 @@ export const messageController = {
             console.error(error);
             res.status(500).json({ message: 'Server error sending message' });
         }
+    },
+
+    // Mark a conversation as read for the current user
+    markConversationRead: async (req: ExpressRequest, res: ExpressResponse) => {
+        try {
+            const userId = (req as any).user.id;
+            const conversationId = parseInt(req.params.id as string);
+
+            const conv = await prisma.conversation.findUnique({
+                where: { id: conversationId }
+            });
+
+            if (!conv || (conv.buyerId !== userId && conv.sellerId !== userId)) {
+                return res.status(403).json({ message: 'Access denied' });
+            }
+
+            const isBuyer = conv.buyerId === userId;
+            const now = new Date();
+
+            await prisma.conversation.update({
+                where: { id: conversationId },
+                data: isBuyer
+                    ? { buyerLastReadAt: now }
+                    : { sellerLastReadAt: now }
+            });
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Server error marking conversation as read' });
+        }
     }
 };

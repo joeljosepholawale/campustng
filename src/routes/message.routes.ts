@@ -9,5 +9,6 @@ router.use(protect);
 router.get('/conversations', messageController.getConversations);
 router.get('/:id', messageController.getMessages);
 router.post('/', messageController.sendMessage);
+router.put('/:id/read', messageController.markConversationRead);
 
 export default router;

@@ -32,31 +32,46 @@ export const notificationController = {
                 }
             });
 
-            // Simple unread message count (if we had an isRead flag on messages, but we don't currently)
-            // Since we don't have an isRead on Message table, we could either structure one, or return 0 for now
-            // To satisfy the user request immediately, we can check for recent messages where the user is NOT the sender
-            // OR we add logic for `unreadMessages`
-            // For MVP: Let's assume we just want to power the Notification bell and we'll add a dummy badge for messages,
-            // or we can count conversations where the user isn't the sender of the last message as a proxy.
-
-            const conversationsWithPotentialUnread = await prisma.conversation.count({
+            // Count conversations where the other person sent a message AFTER the user last read it
+            const conversations = await prisma.conversation.findMany({
                 where: {
                     OR: [
                         { buyerId: userId },
                         { sellerId: userId }
-                    ],
+                    ]
+                },
+                select: {
+                    buyerId: true,
+                    sellerId: true,
+                    buyerLastReadAt: true,
+                    sellerLastReadAt: true,
                     messages: {
-                        some: { // messages exist
-                            senderId: { not: userId } // sent by the other person
-                            // ideally we would check if it's read by this user, but schema lacks message read receipts.
-                        }
+                        orderBy: { createdAt: 'desc' },
+                        take: 1,
+                        select: { senderId: true, createdAt: true }
                     }
                 }
             });
 
+            let unreadConvCount = 0;
+            for (const conv of conversations) {
+                const lastMsg = conv.messages[0];
+                if (!lastMsg) continue;
+                // Skip if the last message was sent by the current user
+                if (lastMsg.senderId === userId) continue;
+
+                const isBuyer = conv.buyerId === userId;
+                const lastReadAt = isBuyer ? conv.buyerLastReadAt : conv.sellerLastReadAt;
+
+                // Unread if: never read, or last message is newer than last read timestamp
+                if (!lastReadAt || lastMsg.createdAt > lastReadAt) {
+                    unreadConvCount++;
+                }
+            }
+
             res.json({
                 notifications: unreadNotifications,
-                messages: conversationsWithPotentialUnread // proxy count
+                messages: unreadConvCount
             });
         } catch (error) {
             console.error('Error fetching unread counts:', error);
