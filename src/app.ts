@@ -11,6 +11,9 @@ dotenv.config();
 
 const app: Application = express();
 
+// Trust Vercel's proxy so express-rate-limit can read X-Forwarded-For correctly
+app.set('trust proxy', 1);
+
 // Security HTTP headers
 app.use(helmet());
 
