@@ -510,4 +510,49 @@ export const adminController = {
             }
         }
     */
+    // --- CONFIGURATION MANAGEMENT ---
+    updateAppConfig: async (req: Request, res: Response) => {
+        try {
+            const {
+                latestAndroidVersion,
+                minAndroidVersion,
+                latestIosVersion,
+                minIosVersion,
+                playStoreUrl,
+                appStoreUrl
+            } = req.body;
+
+            let config = await prisma.appConfig.findFirst();
+
+            if (config) {
+                config = await prisma.appConfig.update({
+                    where: { id: config.id },
+                    data: {
+                        latestAndroidVersion,
+                        minAndroidVersion,
+                        latestIosVersion,
+                        minIosVersion,
+                        playStoreUrl,
+                        appStoreUrl
+                    }
+                });
+            } else {
+                config = await prisma.appConfig.create({
+                    data: {
+                        latestAndroidVersion: latestAndroidVersion || '1.0.0',
+                        minAndroidVersion: minAndroidVersion || '1.0.0',
+                        latestIosVersion: latestIosVersion || '1.0.0',
+                        minIosVersion: minIosVersion || '1.0.0',
+                        playStoreUrl,
+                        appStoreUrl
+                    }
+                });
+            }
+
+            res.json({ message: 'Configuration updated successfully', config });
+        } catch (error) {
+            console.error('Error updating app config:', error);
+            res.status(500).json({ message: 'Server error updating config', error: String(error) });
+        }
+    }
 };

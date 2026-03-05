@@ -73,4 +73,7 @@ router.delete('/categories/:id', adminController.deleteCategory);
 // Transactions
 router.get('/transactions', adminController.getTransactions);
 
+// App configuration (Updates version checks)
+router.put('/config', adminController.updateAppConfig);
+
 export default router;
