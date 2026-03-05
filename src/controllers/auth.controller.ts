@@ -252,6 +252,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
             where: { id: userId },
             data: {
                 isVerified: true,
+                isIdVerified: true, // Automatically verify student ID upon email verification
                 verificationCode: null // Clear the OTP
             },
             select: {
@@ -348,7 +349,7 @@ export const updatePushToken = async (req: Request, res: Response) => {
     }
 };
 
-// Report a user (MVP: just log and acknowledge)
+// Report a user or content (listing)
 export const reportUser = async (req: Request, res: Response) => {
     try {
         const userId = req.user?.id;
@@ -356,26 +357,27 @@ export const reportUser = async (req: Request, res: Response) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
-        const { reportedUserId, reason } = req.body;
+        const { reportedUserId, productId, reason } = req.body;
 
-        if (!reportedUserId || !reason) {
-            return res.status(400).json({ message: 'reportedUserId and reason are required' });
+        if (!reason || (!reportedUserId && !productId)) {
+            return res.status(400).json({ message: 'Reason and either reportedUserId or productId are required' });
         }
 
         // Save to the Reports table
         await prisma.report.create({
             data: {
                 reporterId: userId,
-                reportedUserId: reportedUserId,
+                reportedUserId: reportedUserId ? parseInt(reportedUserId.toString()) : undefined,
+                productId: productId ? parseInt(productId.toString()) : undefined,
                 reason,
             }
         });
 
-        console.log(`[REPORT] User ${userId} reported user ${reportedUserId}. Reason: ${reason}`);
+        console.log(`[REPORT] User ${userId} reported. Reason: ${reason}`);
 
         res.json({ message: 'Report submitted. Our team will review it.' });
     } catch (error) {
-        console.error('Error reporting user:', error);
+        console.error('Error reporting content:', error);
         res.status(500).json({ message: 'Server error submitting report' });
     }
 };

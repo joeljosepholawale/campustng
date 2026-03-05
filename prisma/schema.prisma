@@ -65,6 +65,9 @@ model User {
   reportsSubmitted Report[] @relation("ReportsSubmitted")
   reportsReceived  Report[] @relation("ReportsReceived")
 
+  blocksInitiated Block[] @relation("BlocksInitiated")
+  blocksReceived  Block[] @relation("BlocksReceived")
+
   savedSearches SavedSearch[]
   notifications Notification[]
   forumPosts    ForumPost[]        @relation("ForumPosts")
@@ -74,6 +77,18 @@ model User {
   sentGroupMessages StudyGroupMessage[]  @relation("SentStudyGroupMessages")
 
   @@map("users")
+}
+
+model Block {
+  id        Int      @id @default(autoincrement())
+  blockerId Int
+  blocker   User     @relation("BlocksInitiated", fields: [blockerId], references: [id])
+  blockedId Int
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
 }
 
 model Category {
@@ -109,6 +124,7 @@ model Product {
   category   Category @relation(fields: [categoryId], references: [id])
 
   conversations Conversation[]
+  reports       Report[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -145,6 +161,7 @@ model Conversation {
 model Message {
   id        Int      @id @default(autoincrement())
   text      String
+  imageUrl  String?
   createdAt DateTime @default(now())
 
   conversationId Int
@@ -218,8 +235,11 @@ model Report {
   reporterId Int
   reporter   User @relation("ReportsSubmitted", fields: [reporterId], references: [id])
 
-  reportedUserId Int
-  reportedUser   User @relation("ReportsReceived", fields: [reportedUserId], references: [id])
+  reportedUserId Int?
+  reportedUser   User? @relation("ReportsReceived", fields: [reportedUserId], references: [id])
+
+  productId Int?
+  product   Product? @relation(fields: [productId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

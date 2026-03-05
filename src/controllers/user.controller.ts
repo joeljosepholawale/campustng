@@ -157,5 +157,68 @@ export const userController = {
             console.error('Update storefront error:', error);
             res.status(500).json({ message: 'Failed to update storefront' });
         }
+    },
+
+    // Block User
+    async blockUser(req: Request, res: Response) {
+        try {
+            const blockerId = (req as any).user.id;
+            const blockedId = parseInt(req.params.id as string);
+
+            if (blockerId === blockedId) {
+                return res.status(400).json({ message: 'You cannot block yourself' });
+            }
+
+            await prisma.block.upsert({
+                where: {
+                    blockerId_blockedId: { blockerId, blockedId }
+                },
+                update: {},
+                create: { blockerId, blockedId }
+            });
+
+            res.json({ message: 'User blocked successfully' });
+        } catch (error) {
+            console.error('Block error:', error);
+            res.status(500).json({ message: 'Failed to block user' });
+        }
+    },
+
+    // Delete Account (Deactivate)
+    async deleteAccount(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user.id;
+
+            // Mark user as inactive and remove sensitive data/listings
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    isActive: false,
+                    // In a real app, you might want to scramble or nullify email/token too
+                    // but for deactivation, isActive=false is usually enough.
+                }
+            });
+
+            // Mark their listings as inactive
+            await prisma.product.updateMany({
+                where: { userId },
+                data: { isActive: false }
+            });
+
+            await prisma.service.updateMany({
+                where: { userId },
+                data: { isActive: false }
+            });
+
+            await prisma.request.updateMany({
+                where: { userId },
+                data: { isActive: false }
+            });
+
+            res.json({ message: 'Account deactivated successfully. You have been logged out.' });
+        } catch (error) {
+            console.error('Account deletion error:', error);
+            res.status(500).json({ message: 'Failed to deactivate account' });
+        }
     }
 };

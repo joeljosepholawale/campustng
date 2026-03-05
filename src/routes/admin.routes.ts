@@ -50,9 +50,9 @@ router.get('/users', adminController.getUsers);
 router.put('/users/:userId/status', adminController.updateUserStatus);
 router.post('/notifications/broadcast', adminController.sendBroadcast);
 
-// Student ID Verification
-router.get('/verifications', adminController.getPendingVerifications);
-router.put('/verifications/:id/review', adminController.reviewVerification);
+// Student ID Verification (Disabled as it is now automated)
+// router.get('/verifications', adminController.getPendingVerifications);
+// router.put('/verifications/:id/review', adminController.reviewVerification);
 
 // Content Moderation
 router.get('/products', adminController.getProducts);

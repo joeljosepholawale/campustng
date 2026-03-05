@@ -16,4 +16,7 @@ router.post('/follow/:id', protect, userController.followUser);
 router.delete('/unfollow/:id', protect, userController.unfollowUser);
 router.put('/storefront', protect, userController.updateStorefront);
 
+router.post('/block/:id', protect, userController.blockUser);
+router.delete('/account', protect, userController.deleteAccount);
+
 export default router;

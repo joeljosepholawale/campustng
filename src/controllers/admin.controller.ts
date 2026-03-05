@@ -455,57 +455,59 @@ export const adminController = {
         }
     },
 
-    // --- STUDENT ID VERIFICATION ---
-    getPendingVerifications: async (req: Request, res: Response) => {
-        try {
-            const pending = await prisma.user.findMany({
-                where: { idCardUrl: { not: null }, isIdVerified: false },
-                select: { id: true, firstName: true, lastName: true, email: true, idCardUrl: true, matricNumber: true, createdAt: true },
-                orderBy: { createdAt: 'desc' }
-            });
-            res.json(pending);
-        } catch (error) {
-            console.error('Failed to fetch pending verifications', error);
-            res.status(500).json({ message: 'Failed to fetch pending verifications' });
-        }
-    },
-
-    reviewVerification: async (req: Request, res: Response) => {
-        try {
-            const userId = parseInt(req.params.id as string);
-            const { approve } = req.body;
-
-            if (approve) {
-                await prisma.user.update({
-                    where: { id: userId },
-                    data: { isIdVerified: true }
+    /*
+        // --- STUDENT ID VERIFICATION (DISABLED FOR NOW) ---
+        getPendingVerifications: async (req: Request, res: Response) => {
+            try {
+                const pending = await prisma.user.findMany({
+                    where: { idCardUrl: { not: null }, isIdVerified: false },
+                    select: { id: true, firstName: true, lastName: true, email: true, idCardUrl: true, matricNumber: true, createdAt: true },
+                    orderBy: { createdAt: 'desc' }
                 });
-                // Send push notification
-                await sendPushNotification({
-                    userIds: [userId],
-                    title: 'ID Verification Approved',
-                    body: 'Your student ID has been verified. You now have a verified badge!',
-                    type: 'SYSTEM',
-                    data: { route: 'Profile' }
-                });
-            } else {
-                await prisma.user.update({
-                    where: { id: userId },
-                    data: { idCardUrl: null, isIdVerified: false } // Reset so they can re-upload
-                });
-                await sendPushNotification({
-                    userIds: [userId],
-                    title: 'ID Verification Rejected',
-                    body: 'Your ID verification was rejected. Please upload a clearer image of your Student ID.',
-                    type: 'SYSTEM',
-                    data: { route: 'Profile' }
-                });
+                res.json(pending);
+            } catch (error) {
+                console.error('Failed to fetch pending verifications', error);
+                res.status(500).json({ message: 'Failed to fetch pending verifications' });
             }
-
-            res.json({ message: `Verification ${approve ? 'approved' : 'rejected'}` });
-        } catch (error) {
-            console.error('Failed to review verification', error);
-            res.status(500).json({ message: 'Failed to review verification' });
+        },
+    
+        reviewVerification: async (req: Request, res: Response) => {
+            try {
+                const userId = parseInt(req.params.id as string);
+                const { approve } = req.body;
+    
+                if (approve) {
+                    await prisma.user.update({
+                        where: { id: userId },
+                        data: { isIdVerified: true }
+                    });
+                    // Send push notification
+                    await sendPushNotification({
+                        userIds: [userId],
+                        title: 'ID Verification Approved',
+                        body: 'Your student ID has been verified. You now have a verified badge!',
+                        type: 'SYSTEM',
+                        data: { route: 'Profile' }
+                    });
+                } else {
+                    await prisma.user.update({
+                        where: { id: userId },
+                        data: { idCardUrl: null, isIdVerified: false } // Reset so they can re-upload
+                    });
+                    await sendPushNotification({
+                        userIds: [userId],
+                        title: 'ID Verification Rejected',
+                        body: 'Your ID verification was rejected. Please upload a clearer image of your Student ID.',
+                        type: 'SYSTEM',
+                        data: { route: 'Profile' }
+                    });
+                }
+    
+                res.json({ message: `Verification ${approve ? 'approved' : 'rejected'}` });
+            } catch (error) {
+                console.error('Failed to review verification', error);
+                res.status(500).json({ message: 'Failed to review verification' });
+            }
         }
-    }
+    */
 };
