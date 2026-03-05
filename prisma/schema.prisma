@@ -378,3 +378,15 @@ model Notification {
   @@map("notifications")
 }
 
+model AppConfig {
+  id                   Int      @id @default(autoincrement())
+  latestAndroidVersion String   @default("1.0.0")
+  minAndroidVersion    String   @default("1.0.0")
+  latestIosVersion     String   @default("1.0.0")
+  minIosVersion        String   @default("1.0.0")
+  playStoreUrl         String?
+  appStoreUrl          String?
+  updatedAt            DateTime @updatedAt
+
+  @@map("app_configs")
+}

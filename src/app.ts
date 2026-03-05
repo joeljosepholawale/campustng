@@ -53,6 +53,7 @@ import userRoutes from './routes/user.routes';
 import savedSearchRoutes from './routes/savedSearch.routes';
 import paymentRoutes from './routes/payment.routes';
 import notificationRoutes from './routes/notification.routes';
+import configRoutes from './routes/config.routes';
 
 // ... 
 
@@ -71,5 +72,6 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/saved-searches', savedSearchRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/config', configRoutes);
 
 export default app;
