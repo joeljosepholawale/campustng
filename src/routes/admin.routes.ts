@@ -76,4 +76,10 @@ router.get('/transactions', adminController.getTransactions);
 // App configuration (Updates version checks)
 router.put('/config', adminController.updateAppConfig);
 
+// Community Management (Forums & Groups)
+router.get('/community/forums', adminController.getAdminForums);
+router.delete('/community/forums/:id', adminController.deleteAdminForum);
+router.get('/community/groups', adminController.getAdminGroups);
+router.delete('/community/groups/:id', adminController.deleteAdminGroup);
+
 export default router;

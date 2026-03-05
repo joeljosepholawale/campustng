@@ -554,5 +554,98 @@ export const adminController = {
             console.error('Error updating app config:', error);
             res.status(500).json({ message: 'Server error updating config', error: String(error) });
         }
+    },
+
+    // --- COMMUNITY MODERATION ---
+    getAdminForums: async (req: Request, res: Response) => {
+        try {
+            const { search } = req.query;
+            const forums = await prisma.forumPost.findMany({
+                where: search ? {
+                    OR: [
+                        { title: { contains: String(search), mode: 'insensitive' } },
+                        { content: { contains: String(search), mode: 'insensitive' } }
+                    ]
+                } : undefined,
+                include: {
+                    user: { select: { firstName: true, lastName: true, email: true } },
+                    _count: { select: { comments: true } }
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 100
+            });
+            res.json(forums);
+        } catch (error) {
+            console.error('Failed to fetch admin forums:', error);
+            res.status(500).json({ message: 'Server error fetching forums' });
+        }
+    },
+
+    deleteAdminForum: async (req: Request, res: Response) => {
+        try {
+            const forumId = parseInt(req.params.id as string);
+
+            // Delete all comments first to prevent foreign key errors
+            await prisma.forumComment.deleteMany({
+                where: { postId: forumId }
+            });
+
+            await prisma.forumPost.delete({
+                where: { id: forumId }
+            });
+
+            res.json({ message: 'Forum post deleted successfully' });
+        } catch (error) {
+            console.error('Failed to delete admin forum:', error);
+            res.status(500).json({ message: 'Server error deleting forum post' });
+        }
+    },
+
+    getAdminGroups: async (req: Request, res: Response) => {
+        try {
+            const { search } = req.query;
+            const groups = await prisma.studyGroup.findMany({
+                where: search ? {
+                    OR: [
+                        { name: { contains: String(search), mode: 'insensitive' } },
+                        { description: { contains: String(search), mode: 'insensitive' } }
+                    ]
+                } : undefined,
+                include: {
+                    creator: { select: { firstName: true, lastName: true, email: true } },
+                    _count: { select: { members: true, messages: true } }
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 100
+            });
+            res.json(groups);
+        } catch (error) {
+            console.error('Failed to fetch admin groups:', error);
+            res.status(500).json({ message: 'Server error fetching study groups' });
+        }
+    },
+
+    deleteAdminGroup: async (req: Request, res: Response) => {
+        try {
+            const groupId = parseInt(req.params.id as string);
+
+            // Cascade delete members and messages first
+            await prisma.studyGroupMember.deleteMany({
+                where: { groupId }
+            });
+
+            await prisma.studyGroupMessage.deleteMany({
+                where: { groupId }
+            });
+
+            await prisma.studyGroup.delete({
+                where: { id: groupId }
+            });
+
+            res.json({ message: 'Study group deleted successfully' });
+        } catch (error) {
+            console.error('Failed to delete admin group:', error);
+            res.status(500).json({ message: 'Server error deleting study group' });
+        }
     }
 };
