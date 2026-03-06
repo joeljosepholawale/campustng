@@ -72,6 +72,7 @@ model User {
   notifications Notification[]
   forumPosts    ForumPost[]        @relation("ForumPosts")
   forumComments     ForumComment[]       @relation("ForumComments")
+  productComments   ProductComment[]     @relation("ProductComments")
   createdGroups     StudyGroup[]         @relation("CreatedStudyGroups")
   joinedGroups      StudyGroupMember[]   @relation("JoinedStudyGroups")
   sentGroupMessages StudyGroupMessage[]  @relation("SentStudyGroupMessages")
@@ -125,6 +126,7 @@ model Product {
 
   conversations Conversation[]
   reports       Report[]
+  comments      ProductComment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -133,6 +135,23 @@ model Product {
   @@index([userId])
   @@index([isActive])
   @@map("products")
+}
+
+model ProductComment {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  userId    Int
+  user      User     @relation("ProductComments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([userId])
+  @@map("product_comments")
 }
 
 model Conversation {

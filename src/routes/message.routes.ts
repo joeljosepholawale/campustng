@@ -7,6 +7,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/conversations', messageController.getConversations);
+router.get('/existing/:targetUserId', messageController.getExistingConversation);
 router.get('/:id', messageController.getMessages);
 router.post('/', messageController.sendMessage);
 router.put('/:id/read', messageController.markConversationRead);

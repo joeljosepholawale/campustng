@@ -328,5 +328,68 @@ export const productController = {
             console.error('Verify boost payment error:', error);
             res.status(500).json({ message: 'Internal Server Error' });
         }
+    },
+
+    // Get comments for a product
+    async getProductComments(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const comments = await prisma.productComment.findMany({
+                where: { productId: Number(id) },
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            profilePhotoUrl: true,
+                            isIdVerified: true
+                        }
+                    }
+                }
+            });
+            res.json(comments);
+        } catch (error) {
+            console.error('Error fetching product comments:', error);
+            res.status(500).json({ message: 'Failed to fetch comments' });
+        }
+    },
+
+    // Add a comment to a product
+    async addProductComment(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const { text } = req.body;
+            const userId = (req as any).user.id;
+
+            if (!text || !text.trim()) {
+                return res.status(400).json({ message: 'Comment text is required' });
+            }
+
+            const comment = await prisma.productComment.create({
+                data: {
+                    text: text.trim(),
+                    productId: Number(id),
+                    userId,
+                },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            profilePhotoUrl: true,
+                            isIdVerified: true
+                        }
+                    }
+                }
+            });
+
+            res.status(201).json(comment);
+        } catch (error) {
+            console.error('Error adding product comment:', error);
+            res.status(500).json({ message: 'Failed to add comment' });
+        }
     }
 };

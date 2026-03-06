@@ -56,6 +56,21 @@ export const messageService = {
     },
 
     /**
+     * Finds an existing conversation between two users
+     */
+    getExistingConversation: async (userId: number, targetUserId: number) => {
+        return prisma.conversation.findFirst({
+            where: {
+                OR: [
+                    { buyerId: userId, sellerId: targetUserId },
+                    { buyerId: targetUserId, sellerId: userId }
+                ]
+            },
+            orderBy: { updatedAt: 'desc' }
+        });
+    },
+
+    /**
      * Fetch messages for a conversation after verifying that the user is a participant.
      * Throws an error string if access is denied or conversation not found.
      */

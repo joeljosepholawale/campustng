@@ -14,6 +14,25 @@ export const messageController = {
         }
     },
 
+    // Check if an existing conversation exists with a specific user
+    getExistingConversation: async (req: ExpressRequest, res: ExpressResponse) => {
+        try {
+            const userId = (req as any).user.id;
+            const targetUserId = parseInt(req.params.targetUserId as string);
+
+            const conversation = await messageService.getExistingConversation(userId, targetUserId);
+
+            if (conversation) {
+                res.json({ exists: true, conversationId: conversation.id });
+            } else {
+                res.json({ exists: false });
+            }
+        } catch (error) {
+            console.error('Failed to check existing conversation:', error);
+            res.status(500).json({ message: 'Server error checking conversation' });
+        }
+    },
+
     // Get messages for a specific conversation
     getMessages: async (req: ExpressRequest, res: ExpressResponse) => {
         try {
