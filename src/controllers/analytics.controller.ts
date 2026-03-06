@@ -14,20 +14,17 @@ export const analyticsController = {
             });
 
             const totalViews = products.reduce((sum, p) => sum + p.views, 0);
-            const totalBookmarks = products.reduce((sum, p) => sum + p.bookmarks, 0);
             const activeListings = products.filter(p => !p.isSold && p.isActive).length;
             const soldListings = products.filter(p => p.isSold).length;
 
             res.json({
                 totalViews,
-                totalBookmarks,
                 activeListings,
                 soldListings,
                 products: products.map(p => ({
                     id: p.id,
                     title: p.title,
                     views: p.views,
-                    bookmarks: p.bookmarks,
                     isSold: p.isSold
                 }))
             });

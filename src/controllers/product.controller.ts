@@ -93,8 +93,11 @@ export const productController = {
     async getProductById(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const product = await prisma.product.findUnique({
+            const product = await prisma.product.update({
                 where: { id: parseInt(id as string) },
+                data: {
+                    views: { increment: 1 }
+                },
                 include: {
                     category: true,
                     user: {
