@@ -13,11 +13,20 @@ export const productController = {
             const condition = req.query.condition as string;
             const listingType = req.query.listingType as string;
             const schoolId = req.query.schoolId ? parseInt(req.query.schoolId as string) : undefined;
+            const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
             const page = req.query.page ? parseInt(req.query.page as string) : 1;
             const limit = 50;
             const skip = (page - 1) * limit;
 
-            const filter: any = { isActive: true }; // Only show active listings
+            const filter: any = {};
+
+            // If they are not checking their own products specifically, usually we only show active ones.
+            // If checking 'My Products' (userId provided), we might want to see both active and inactive/sold.
+            if (!userId) {
+                filter.isActive = true;
+            } else {
+                filter.userId = userId;
+            }
 
             if (category && category !== 'All') {
                 filter.category = {
