@@ -303,8 +303,14 @@ export const productController = {
                 return res.status(404).json({ message: 'Boost plan not found' });
             }
 
-            if (paymentData.amount < plan.price || paymentData.currency !== 'NGN') {
-                return res.status(400).json({ message: 'Invalid payment amount or currency' });
+            if (paymentData.amount < plan.price || paymentData.currency !== 'NGN' || paymentData.status !== 'successful') {
+                console.warn('Payment verification failed criteria:', {
+                    receivedAmount: paymentData.amount,
+                    expectedAmount: plan.price,
+                    currency: paymentData.currency,
+                    status: paymentData.status
+                });
+                return res.status(400).json({ message: 'Invalid payment details or incomplete payment' });
             }
 
             // 4. Verify product ownership
