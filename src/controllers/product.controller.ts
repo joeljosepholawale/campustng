@@ -108,7 +108,8 @@ export const productController = {
                             firstName: true,
                             lastName: true,
                             school: true,
-                            email: true
+                            email: true,
+                            isIdVerified: true // Added for UI badges
                         }
                     }
                 }

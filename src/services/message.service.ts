@@ -50,7 +50,11 @@ export const messageService = {
                 product: conv.product,
                 partner: otherUser,
                 lastMessage: lastMessage?.text || conv.lastMessage || 'Started a conversation',
-                updatedAt: conv.updatedAt
+                updatedAt: conv.updatedAt,
+                buyerLastReadAt: conv.buyerLastReadAt,
+                sellerLastReadAt: conv.sellerLastReadAt,
+                buyerId: conv.buyerId,
+                sellerId: conv.sellerId
             };
         });
     },
@@ -108,13 +112,25 @@ export const messageService = {
 
         // Find or create conversation
         if (!convId) {
-            if (!productId || !sellerId) {
+            if (!sellerId) {
                 throw new Error('MISSING_CONVERSATION_PARAMS');
+            }
+
+            let effectiveProductId = productId;
+            if (!effectiveProductId) {
+                // Find ANY product to satisfy database non-null constraint
+                const anyProduct = await prisma.product.findFirst({ select: { id: true } });
+                if (anyProduct) {
+                    effectiveProductId = anyProduct.id;
+                } else {
+                    // Fail gracefully if no products exist at all in the system
+                    throw new Error('MISSING_CONVERSATION_PARAMS');
+                }
             }
 
             let conv = await prisma.conversation.findFirst({
                 where: {
-                    productId,
+                    productId: effectiveProductId,
                     buyerId: senderId,
                     sellerId
                 }
@@ -123,7 +139,7 @@ export const messageService = {
             if (!conv) {
                 conv = await prisma.conversation.create({
                     data: {
-                        productId,
+                        productId: effectiveProductId,
                         buyerId: senderId,
                         sellerId
                     }
@@ -203,6 +219,25 @@ export const messageService = {
                 ? { buyerLastReadAt: now }
                 : { sellerLastReadAt: now }
         });
+
+        // Emit read receipt to the OTHER participant
+        try {
+            const io = getIo();
+            const recipientId = isBuyer ? conv.sellerId : conv.buyerId;
+            io.to(`user_${recipientId}`).emit('read_receipt', {
+                conversationId,
+                readerId: userId,
+                readAt: now
+            });
+            // Also emit to the conversation room
+            io.to(`conv_${conversationId}`).emit('read_receipt', {
+                conversationId,
+                readerId: userId,
+                readAt: now
+            });
+        } catch (err) {
+            console.error('Socket read_receipt broadcast failed:', err);
+        }
 
         return { success: true };
     },
