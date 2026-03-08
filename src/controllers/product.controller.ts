@@ -19,6 +19,8 @@ export const productController = {
             const skip = (page - 1) * limit;
 
             const filter: any = {};
+            console.log(`[ProductSearch] term: "${search}", category: "${category}", school: ${schoolId}`);
+
 
             // If they are not checking their own products specifically, usually we only show active ones.
             // If checking 'My Products' (userId provided), we might want to see both active and inactive/sold.
@@ -30,14 +32,14 @@ export const productController = {
 
             if (category && category !== 'All') {
                 filter.category = {
-                    name: category
+                    name: { contains: category, mode: 'insensitive' }
                 };
             }
 
             if (search) {
                 filter.OR = [
-                    { title: { contains: search } },
-                    { description: { contains: search } }
+                    { title: { contains: search, mode: 'insensitive' } },
+                    { description: { contains: search, mode: 'insensitive' } }
                 ];
             }
 
@@ -147,23 +149,22 @@ export const productController = {
 
             res.status(201).json(product);
 
-            // Notify followers (Fire and forget)
+            // Notify followers (Unified DB + Push) - Fire and forget
             (async () => {
                 try {
                     const followers = await prisma.follow.findMany({
                         where: { followingId: userId },
-                        include: { follower: true }
+                        select: { followerId: true }
                     });
 
-                    for (const f of followers) {
-                        await prisma.notification.create({
-                            data: {
-                                userId: f.followerId,
-                                type: 'SYSTEM',
-                                title: 'New Drop! 🚀',
-                                message: `${(req as any).user.firstName} just listed: ${product.title}`,
-                                data: JSON.stringify({ route: 'ProductDetails', params: { productId: product.id, type: 'product' } })
-                            }
+                    if (followers.length > 0) {
+                        const { sendPushNotification } = require('../utils/pushNotifications');
+                        await sendPushNotification({
+                            userIds: followers.map(f => f.followerId),
+                            type: 'SYSTEM',
+                            title: 'New Drop! 🚀',
+                            body: `${(req as any).user.firstName} just listed: ${product.title}`,
+                            data: { route: 'ProductDetails', params: { productId: product.id, type: 'product' } }
                         });
                     }
                 } catch (e) {

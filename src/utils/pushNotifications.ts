@@ -9,7 +9,9 @@ const getExpoInstance = async () => {
     if (!expoInstance) {
         // Dynamic import because expo-server-sdk v6+ is an ESM package
         const { Expo } = await import('expo-server-sdk');
-        expoInstance = new Expo();
+        expoInstance = new Expo({
+            accessToken: process.env.EXPO_ACCESS_TOKEN
+        });
     }
     return expoInstance;
 };

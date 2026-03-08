@@ -101,15 +101,14 @@ export const userController = {
                 create: { followerId, followingId }
             });
 
-            // Trigger notification
-            await prisma.notification.create({
-                data: {
-                    userId: followingId,
-                    type: 'SYSTEM',
-                    title: 'New Follower',
-                    message: `${(req as any).user.firstName} started following your store!`,
-                    data: JSON.stringify({ route: 'ViewUser', params: { userId: followerId } })
-                }
+            // Trigger unified notification (DB + Push)
+            const { sendPushNotification } = require('../utils/pushNotifications');
+            await sendPushNotification({
+                userIds: [followingId],
+                type: 'SYSTEM',
+                title: 'New Follower! 👤',
+                body: `${(req as any).user.firstName} started following your store!`,
+                data: { route: 'ViewUser', params: { userId: followerId } }
             });
 
             res.json({ message: 'Followed successfully' });

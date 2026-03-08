@@ -6,12 +6,21 @@ const prisma = new PrismaClient();
 // Get all requests
 export const getRequests = async (req: Request, res: Response): Promise<void> => {
     try {
+        const search = req.query.search as string;
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
         const limit = 50;
         const skip = (page - 1) * limit;
 
+        const filter: any = { isActive: true };
+        if (search) {
+            filter.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+
         const requests = await prisma.request.findMany({
-            where: { isActive: true },
+            where: filter,
             take: limit,
             skip: skip,
             include: {
