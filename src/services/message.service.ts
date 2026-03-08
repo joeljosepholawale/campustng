@@ -172,10 +172,12 @@ export const messageService = {
             console.error('Socket broadcast failed:', socketErr);
         }
 
-        // Fire-and-forget push notification
-        messageService._sendMessagePush(convId, senderId, lastMsgText, message.sender?.firstName).catch(
-            (err) => console.warn('Push notification failed (non-blocking):', err)
-        );
+        // Await push notification so Vercel does not terminate the function
+        try {
+            await messageService._sendMessagePush(convId, senderId, lastMsgText, message.sender?.firstName);
+        } catch (err) {
+            console.warn('Push notification failed:', err);
+        }
 
         return message;
     },
